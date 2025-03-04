@@ -1,4 +1,5 @@
-﻿define char_name = "Player"
+﻿# CHARACTERS
+define char_name = "Player"
 define char = Character(char_name, color="#FFFFFF")
 
 define daniel = Character("Daniel", color="#FF5733")
@@ -6,9 +7,63 @@ define wendy = Character("Wendy", color="#FFB6C1")
 define james = Character("James", color="#87CEEB")
 define phoebe = Character("Phoebe", color="#9370DB")
 
-# START OF THE GAME
 
+# Define Character Images
+image daniel_portrait = "images/portraits/doctor-portrait.png"
+image wendy_portrait = "images/portraits/doctors_wife_portrait.png"
+image james_portrait = "images/portraits/journalist_portrait.png"
+image phoebe_portrait = "images/portraits/ps_portrait.png"
+
+# Backgrounds
+image bg mansion = "images/bg/mansion_bg.png"
+image bg black = "images/bg/black_bg.png"
+
+
+# Custom Menu
+screen choice(items):
+    style_prefix "choice"
+
+    vbox:
+        xalign 0.5
+        yalign 0.75  # Move the choices lower (default is usually 0.5)
+        spacing 10  # Space between choices
+
+        for i in items:
+            textbutton i.caption action i.action
+
+# Character Trackers
+default talked_to_daniel_before_death = False
+default talked_to_wendy_before_death = False
+default talked_to_james_before_death = False
+default talked_to_phoebe_before_death = False
+
+# EFFECTS CONFIG
+transform blur_effect:
+    blur 2 
+
+transform chem_position:
+    xalign 0.5  
+    yalign 0.3
+
+transform character_center:
+    xalign 0.5  
+    yalign 1.0 
+
+transform character_left:
+    xalign 0.1  # Moves character to the left
+    yalign 1.0
+
+transform character_right:
+    xalign 0.9  # Moves character to the right
+    yalign 1.0
+
+# START OF THE GAME
 label start:
+
+    stop music fadeout 3.0
+
+    play sound "audio/sfx/rain_thunder.mp3" fadein 3.0 loop
+    $ renpy.sound.set_volume(0.1, channel="sound")
 
     scene bg black with fade
 
@@ -18,40 +73,36 @@ label start:
     $ char_name = char_name.strip() or "Player"
     $ char = Character(char_name, color="#FFFFFF")
 
-    "Welcome, [char_name]. You have arrived at the mansion."
+    "Welcome, [char_name]. The storm rages as you arrive at the mansion."
 
-    call screen image_map
+    stop sound fadeout 1.0
 
-    return
+    window hide
 
-transform blur_effect:
-    # matrixcolor TintMatrix("#eaeaea")  # Slight gray tint
-    blur 2  # Increase the blur level
+    jump daniel_greeting
+
 
 screen image_map():
-    # Background map
+    frame:
+        background Solid("#000000")  # Keep it dark
+        xfill True
+        yfill True
+
     add "images/bg/floor-one-main.png" fit "contain" xalign 0.5 at blur_effect
 
-    # Clickable characters
+    # Image Buttons (Characters)
     imagebutton:
         idle "images/walks/doctor-walk/doctor-stand.png"
         hover "images/walks/doctor-walk/doctor-stand-hover.png"
-        action Jump("daniel_greeting")
+        # action [Hide("image_map"), Jump("daniel_greeting")]
         xpos 680
         ypos 750
         at Transform(zoom=0.3, rotate=-0.3)
 
-    # imagebutton:
-    #     idle "images/characters/wendy.png"
-    #     hover "images/characters/wendy_hover.png"
-    #     action Jump("wendy_greeting")
-    #     xpos 700
-    #     ypos 500
-
     imagebutton:
         idle "images/walks/journalist-walk/james-stand.png"
         hover "images/walks/journalist-walk/james-stand-hover.png"
-        action Jump("james_greeting")
+        action [Hide("image_map"), Jump("james_greeting")]
         xpos 460
         ypos 250
         at Transform(zoom=0.3, rotate=.3)
@@ -59,16 +110,32 @@ screen image_map():
     imagebutton:
         idle "images/walks/phoebe-walk/phoebe-stand.png"
         hover "images/walks/phoebe-walk/phoebe-stand-hover.png"
-        action Jump("phoebe_greeting")
+        action [Hide("image_map"), Jump("phoebe_greeting")]
         xpos 1100
         ypos 150
         at Transform(zoom=0.3, rotate=-.4)
+
+    # Arrow Button (Return to the image_map screen with fade)
+    imagebutton:
+        idle "images/ui/arrow-right.png"
+        hover "images/ui/arrow-right-hover.png"
+        action [Hide("image_map"), Show("image_map", transition=fade)]
+        xpos 1100
+        ypos 550
+        at Transform(zoom=0.25)
 
 # BEFORE THE FIRST DEATH DIALOGUE AROUND THE MAP
 
 label daniel_greeting:
 
+    play voice "audio/sfx/doorclose2.mp3" 
+    $ renpy.sound.set_volume(0.2, channel="voice")
+
+    play sound "audio/sfx/rain_inside.ogg" fadein 1.0 loop
+
     scene bg mansion with fade
+
+    show daniel_portrait at character_center with dissolve
 
     daniel "Finally! I was beginning to think you couldn’t make it."
 
@@ -76,13 +143,27 @@ label daniel_greeting:
 
     daniel "But no worries! Now that you have arrived in my mansion, our safety is guaranteed. I can promise you that!"
 
+    hide daniel_portrait
     jump mansion_intro_before_death
 
 label mansion_intro_before_death:
 
+    # scene bg mansion with fade
+
+    show wendy_portrait at character_center with dissolve
+
     wendy "So nice to see you again, [char_name]! It has been too long!"
 
     wendy "My husband and I were just talking about you!"
+
+    hide wendy_portrait with fade
+    show daniel_portrait at character_center with dissolve
+
+    daniel "Oh, so you two were talking about me? Hopefully, only good things!"
+
+    hide daniel_portrait
+    show daniel_portrait at character_left with dissolve
+    show wendy_portrait at character_right with dissolve
 
     wendy "I have heard that you are working for the city now. I wonder how your work environment may compare to our own?"
 
@@ -90,9 +171,13 @@ label mansion_intro_before_death:
         "Ask about their work":
             jump ask_work_before_death
         "Tell them about your work":
+            hide daniel_portrait 
             jump tell_work_before_death
 
 label ask_work_before_death:
+
+    show daniel_portrait at character_left with dissolve
+    show wendy_portrait at character_right with dissolve
 
     daniel "Well, as you may have seen on TV, I’m endorsing a new product for nutrition supplements."
 
@@ -108,126 +193,90 @@ label ask_work_before_death:
 
     daniel "You are going to mess things up!"
 
-    wendy "But I am only trying to lighten the load for you, my dear!"
-
-    daniel "And I always end up having to check what you have done to make sure everything is in order."
-
-    daniel "It just makes my life even more stressful!"
-
-    wendy "Well, I think you should…"
-
-    daniel "Enough of this topic."
-
-    daniel "If you really want to help me, right now is the best time to go check on our dinner."
-
-    daniel "You don’t want to burn the chicken, do you?"
-
-    wendy "Oh yes! You are right! I will catch up with you all at the dinner table."
-
-    scene bg mansion with fade
-
-    jump after_choice_before_death
+    hide wendy_portrait
+    hide daniel_portrait
+    call screen image_map
 
 label tell_work_before_death:
+
+    show wendy_portrait at character_center with dissolve
 
     wendy "I have always known that you have a righteous mind."
 
     wendy "To think you became a forensic pathologist to help bring justice to society."
 
-    wendy "I can’t even bear looking at dead corpses. It reminds me of failing to save the patients during their most desperate hour."
+    hide wendy_portrait
+    show daniel_portrait at character_center with dissolve
 
     daniel "Don’t say that! You know very well that patients depend heavily on us."
 
-    daniel "If you can’t get over death, might as well quit as a doctor!"
-
-    daniel "I see you going around the hospital every day like a corpse yourself!"
-
-    daniel "How can you instill confidence in the patients if they see you looking as pale as they are!"
-
-    wendy "I know very well that my patients trust me!"
+    hide daniel_portrait
+    show wendy_portrait at character_center with dissolve
 
     wendy "In spite of my fears, I always do my best to save everyone!"
 
-    daniel "Enough talk of your ideals."
-
-    daniel "You should go check on our dinner."
-
-    daniel "You don’t want to burn the chicken, do you?"
-
-    wendy "Oh yes! You are right! I will catch up with you all at the dinner table."
-
-    scene bg mansion with fade
-
-    jump after_choice_before_death
-
-label after_choice_before_death:
-
-    daniel "What do you think, my old friend?"
-
-    daniel "I am talking about my wife, of course."
-
-    daniel "She always looks so timid and indecisive."
-
-    daniel "I never believed she could get through the tough workload at school, thinking she might need my help and advice."
-
-    daniel "Yet here she is, standing right next to me, both respected doctors!"
-
-    daniel "Now she tries to get her nose into my business every chance she can, but I don’t need her help!"
-
-    daniel "To be frank, I don’t think she is just trying to help with my work."
-
-    daniel "She is trying to control every aspect of my life!"
-
-    daniel "I can tell from my desk that she always goes through my mails and documents."
-
-    daniel "Even if she is my wife, it is hardly the right thing to just peek at someone else’s privacy without permission."
-
-    daniel "I actually wish to speak with you in private today."
-
-    daniel "It’s good to finally catch up with you."
-
-    daniel "There are many things I want to share too, but we will have to continue our conversation after dinner."
-
-    daniel "I’m sure the others are happy to see you as well. I can’t keep you all to myself."
-
-    return
+    hide wendy_portrait
+    call screen image_map
 
 
-label talk_james:
 
-    scene bg newsroom with fade
+## JAMES GREETING    
 
-    james "[char_name]! I never expected to see you of all people! How long has it been? Two years?"
 
-    james "So how is this murder case that you are currently working on? Did you manage to figure out how the victim was killed?"
+label james_greeting:
 
-    james "Hmm, you are wondering how I know about that when we haven’t seen each other for so long?"
+    scene bg mansion 
 
-    james "Behold, for you are in the presence of the greatest journalist of our generation! No secrets can escape from my grasp! Hahaha!"
+    show james_portrait at character_center with dissolve
 
-    james "I know for a fact that you work in the city coroner's office, and apparently, one of their best forensic experts too!"
+    james "[char_name]! I never expected to see you of all people!"
+    james "How long has it been? Two years?"
 
-    james "I guess it is only fair to tell you more of what I have been up to, yeh?"
+    james "So, how is this murder case you're working on?"
+    james "Did you manage to figure out how the victim was killed?"
 
-    james "Going around the city all day trying to dig deep into the latest story, it can be quite exhausting."
+    james "Hmm... you're wondering how I know about that?"
+    james "We haven’t seen each other in so long, after all."
 
-    james "But I honestly really like this job! I guess I didn’t realize I had what it takes to be a good journalist."
+    james "Behold! You stand before the greatest journalist of our generation!"
+    james "No secrets can escape my grasp! Hahaha!"
 
-    james "With my previous medical background, my boss wanted me to focus on health-related topics and speak to these experts at their level."
+    james "I know for a fact you work in the city coroner's office."
+    james "Apparently, you're one of their best forensic experts too!"
 
-    james "People would leave comments saying that they find my articles scientific, reliable, and easy to understand."
+    james "I guess it's only fair to tell you what I've been up to."
+    james "Running around the city, chasing stories all day—it can be exhausting."
 
-    james "Hey! You know what, I should definitely interview you at some point!"
+    james "But honestly? I love this job!"
+    james "I never realized I had what it takes to be a good journalist."
 
-    james "While I cannot be certain if it’s news-worthy, I need a good excuse to finally reconnect with you again!"
+    james "With my medical background, my boss had me focus on health topics."
+    james "I get to speak to experts at their level, and people trust my work."
 
-    james "Let me know when would be a good time later, ok?"
+    james "Readers say my articles are scientific, reliable, and easy to understand."
+    james "That’s pretty rewarding, you know?"
 
-    return
+    james "Hey! You know what?"
+    james "I should definitely interview you at some point!"
 
-label talk_phoebe:
+    james "I’m not sure if it’s newsworthy..."
+    james "But it’s a great excuse to finally reconnect!"
 
-    scene bg laboratory with fade
+    james "Let me know when you have time, okay?"
+
+    hide james_portrait with fade
+
+    call screen image_map
+
+
+## PHOEBE GREETING
+
+
+label phoebe_greeting:
+
+    scene bg mansion 
+
+    show phoebe_portrait at character_center with dissolve
 
     phoebe "…….."
 
@@ -239,222 +288,145 @@ label talk_phoebe:
 
 label phoebe_leave:
 
+    image bag_of_chemicals = "images/items/unlabeled-vial.png"
+
+    show phoebe_portrait at character_center with dissolve
+
     phoebe "That smell… I recognize it."
+    phoebe "The citrus scent is likely coming from limonene or linalool."
+    phoebe "Mixing that with aldehydes can further enrich its profile."
 
-    phoebe "The citrus scent is likely coming from limonene or linalool, and mixing that with aldehydes can further enrich its profile."
+    # Swap to the blurred Phoebe portrait before showing the vial
+    hide phoebe_portrait
+    show ps_portrait_blur at character_center
 
-    phoebe "In fact, I have some samples right here."
-
-    # Show a bag of chemicals sprite or display text
-    show bag_of_chemicals with fade
+    # Show the vial in focus
+    show bag_of_chemicals at chem_position with fade
     pause 1.5
-    hide bag_of_chemicals
 
-    phoebe "Yes…This is quite nostalgic… So you are still wearing the same cologne from two years ago."
+    # Hide both the vial and the blurred Phoebe, then restore normal Phoebe
+    hide bag_of_chemicals with fade
+    hide ps_portrait_blur with dissolve
+    show phoebe_portrait at character_center with dissolve
 
-    phoebe "It reminds me of simpler days, when we all studied together for chemistry."
+    phoebe "Yes… This is quite nostalgic."
+    phoebe "So you are still wearing the same cologne from two years ago."
+
+    phoebe "It reminds me of simpler days, when we all studied chemistry together."
 
     menu:
         "I remember you were really good at chemistry!":
             jump phoebe_chemistry
         "I am so bad with chemistry though…":
-            jump phoebe_bad_at_chemistry
+            jump phoebe_bad_chemistry
+
 
 label phoebe_chemistry:
 
     phoebe "I find it absolutely fascinating!"
-
     phoebe "It’s the study of matter and change, which can be observed all around us!"
+    phoebe "Think of all the possibilities!"
 
-    phoebe "Think of all the possibilities! You can shape reality to your will with just the smallest amount of the right chemicals."
+    phoebe "You can shape reality to your will with just the smallest amount of the right chemicals."
+    phoebe "And it couldn’t be more accurate in the case of human biology."
 
-    phoebe "And it couldn’t be more accurate in the case of our human biology."
+    phoebe "Anything we take into our body can make or break us."
+    phoebe "There are still so many unknown aspects."
 
-    phoebe "Anything we take in our body can make or break us, and there are still so many aspects unknown."
-
-    phoebe "With my pride as a pharmaceutical scientist, I will unlock the secrets to it all. It doesn’t get more exciting than this!"
+    phoebe "With my pride as a pharmaceutical scientist, I will unlock the secrets to it all!"
+    phoebe "It doesn’t get more exciting than this!"
 
     phoebe "Having a smell of your cologne and talking about chemistry actually reminded me of something related to my current research."
+    phoebe "I need to immediately sort things out before the ideas elude me."
+    phoebe "If you’ll excuse me."
 
-    phoebe "I need to immediately sort things out before the ideas elude me. If you’ll excuse me."
+    hide phoebe_portrait
+    call screen image_map
 
-    return
-
-label phoebe_bad_at_chemistry:
+label phoebe_bad_chemistry:
 
     phoebe "That can’t be true."
-
     phoebe "I am aware of your job as a forensic pathologist."
-
     phoebe "You need to use the correct chemicals and precise doses to produce accurate results."
 
     phoebe "In fact, I have been trying to develop new formulas for testing various types of rare poison."
-
     phoebe "It may come in handy in your work one day."
 
     phoebe "Here, I will send you some files."
 
-    # Show message that player obtained research papers
-    show text "Obtained research papers on poison detection."
-    pause 2.0
-    hide text
+    # Display a message about obtaining research papers
+    $ renpy.notify("Obtained research papers on poison detection.")
 
-    show text "Description: A research developing new reagents for poison detection, which involves using organic extracts from plants such as red cabbage, turmeric, and hibiscus."
-    pause 3.0
-    hide text
+    phoebe "These documents discuss developing new reagents for poison detection."
+    phoebe "It involves using organic extracts from plants such as red cabbage, turmeric, and hibiscus."
 
     phoebe "You must let me know your thoughts when you finish reading!"
 
-    return
+    hide phoebe_portrait
+    call screen image_map
 
 label phoebe_hi:
 
     phoebe "……"
-
+    
+    # Phoebe appears absorbed in her thoughts
     "She looks absorbed in her thoughts, staring at her notes."
 
-    return
+    hide phoebe_portrait
+    call screen image_map
 
-label dining_room_cutscene:
 
-    scene bg dining_room with fade
+# label dining_room_cutscene:
 
-    wendy "Everyone, dinner is ready! Let’s gather around the table."
+#     scene bg dining_room with fade
 
-    daniel "Took you long enough! I am starving!"
+#     show wendy_portrait at character_center with dissolve
 
-    james "Ohhh! All the dishes look so good! I can’t wait to dig in."
+#     wendy "Everyone, dinner is ready! Let’s gather around the table."
 
-    phoebe "Ah yes! 375 degrees, the perfect temperature for baked chicken."
+#     hide wendy_portrait
+#     show daniel_portrait at character_left with dissolve
+#     show james_portrait at character_right with dissolve
 
-    phoebe "The golden brown color of the skin comes from the Maillard reaction between amino acids and reduced sugar."
+#     daniel "Took you long enough! I am starving!"
 
-    phoebe "The proteins, including collagens and myosin, break down to create its new texture."
+#     james "Ohhh! All the dishes look so good! I can’t wait to dig in."
 
-    phoebe "The fat melts to keep the meat moist and lock in the flavors. Truly marvelous!"
+#     hide daniel_portrait
+#     hide james_portrait
+#     return
 
-    james "Come on, Phoebe! Stop reminding me of these terminologies I had to learn in class! The nightmares are coming back to me!"
+# label mansion_exploration:
 
-    daniel "I can see that she is still a walking textbook!"
+#     scene bg dark_mansion with fade
 
-    daniel "Surely her great intellect will make topics at the dinner table much more amusing than simple, uninspiring small talks."
+#     "You can freely explore the mansion with limited sight using your flashlight."
 
-    wendy "No matter the case, having this chance for our long-awaited reunion is something to be cherished!"
+#     menu:
+#         "Go to the dining room":
+#             jump dining_room_explore
+#         "Go to the bedroom":
+#             jump bedroom_explore
+#         "Go to the bathroom":
+#             jump bathroom_explore
+#         "End exploration":
+#             jump advance_story
 
-    wendy "I especially want to hear more from [char_name]. We all haven’t seen you in close to a decade!"
+# label dining_room_explore:
 
-    scene bg black with fade
-    play sound "snowstorm.mp3"
+#     scene bg dining_room_dark with fade
 
-    james "A sudden blackout? I thought you took pride in this place, Daniel."
+#     show phoebe_portrait at character_center with dissolve
 
-    daniel "Oh, shut it! Heavy snow may have destroyed nearby power lines, it has nothing to do with my house!"
+#     phoebe "Don’t mind me. I am just doing my work here, and I really need to concentrate."
 
-    wendy "I will go find some candles to light up the room!"
+#     phoebe "If you feel bored, maybe you can go around and check on the others?"
 
-    phoebe "Can’t we just use the light of our phones? Oh no! Looks like there is no signal."
-
-    wendy "Just the light of our phones won’t be enough to illuminate the rooms."
-
-    wendy "But it is a good idea to use them as flashlights to navigate around the mansion."
-
-    wendy "Don’t worry! I will be right back."
-
-    james "Hehe, it just so happens that I need to go to the bathroom. Can you tell me where it is?"
-
-    daniel "Alright, you come with me to the bathroom while Wendy gets the candles."
-
-    scene bg dark_hallway with fade
-
-    "James and Daniel leave off-screen."
-
-    scene bg dining_room_dark with fade
-
-    phoebe "I guess I will just stay here and wait for you all then."
-
-    phoebe "I will take this time and resume work on my latest project."
-
-    return
-
-label mansion_exploration:
-
-    scene bg dark_mansion with fade
-
-    "You can freely explore the mansion with limited sight using your flashlight."
-
-    "Phoebe will stay in the dining hall unless you leave."
-
-    menu:
-        "Go to the dining room":
-            jump dining_room_explore
-        "Go to the bedroom":
-            jump bedroom_explore
-        "Go to the bathroom":
-            jump bathroom_explore
-        "End exploration":
-            jump advance_story
-
-label dining_room_explore:
-
-    scene bg dining_room_dark with fade
-
-    phoebe "Don’t mind me. I am just doing my work here, and I really need to concentrate."
-
-    phoebe "If you feel bored, maybe you can go around and check on the others?"
-
-    jump mansion_exploration
-
-label bedroom_explore:
-
-    scene bg dark_bedroom with fade
-
-    wendy "I could have sworn I put some candles around here. The lighter too… Where could it be?"
-
-    wendy "It’s so difficult trying to find these things in total darkness!"
-
-    wendy "Oh, [char_name]! Did you come here looking for Daniel or James?"
-
-    wendy "They both went into the bathroom. You can check on them if you want."
-
-    wendy "It must be difficult trying to use the bathroom in this total darkness."
-
-    jump mansion_exploration
-
-label bathroom_explore:
-
-    scene bg dark_bathroom with fade
-
-    menu:
-        "Examine first toilet room door":
-            jump examine_first_toilet
-        "Examine second toilet room door":
-            jump examine_second_toilet
-        "Go back":
-            jump mansion_exploration
-
-label examine_first_toilet:
-
-    "Description: The door is locked."
-
-    james "Hey! Occupied!"
-
-    james "I know you may also be holding it in, but wait just a little longer, ok?"
-
-    jump bathroom_explore
-
-label examine_second_toilet:
-
-    "Description: The door is locked. But there is no sound coming out from it."
-
-    jump bathroom_explore
+#     hide phoebe_portrait
+#     jump mansion_exploration
 
 label advance_story:
 
     "Having talked to everyone, you feel a strange sense of unease..."
 
     return
-
-
-# THE FIRST DEATH (That song by TK is so tuff)
-
-
