@@ -1,12 +1,31 @@
-﻿# CHARACTERS
+﻿init python:
+    class ZoomCharacter(object):
+        def __init__(self, *args, **kwargs):
+            self.chr = renpy.character.Character(*args, **kwargs)
+            if not self.chr.image_tag:
+                raise Exception('A ZoomCharacter must have an image')
+
+        def __call__(self, *args, **kwargs):
+            if not hide_char_dark:
+                renpy.show(self.chr.image_tag, at_list=[presayzoom], zorder=10)
+            self.chr(*args, **kwargs)
+            if not hide_char_dark:
+                renpy.show(self.chr.image_tag, at_list=[postsayzoom], zorder=0)
+
+transform presayzoom:
+    ease 0.25 zoom 1.02
+
+transform postsayzoom:
+    ease 0.25 zoom 1.0
+
+# CHARACTERS
 define char_name = "Player"
 define char = Character(char_name, color="#FFFFFF")
 
-define daniel = Character("Daniel", color="#FF5733")
-define wendy = Character("Wendy", color="#FFB6C1")
-define james = Character("James", color="#87CEEB")
-define phoebe = Character("Phoebe", color="#9370DB")
-
+define james = ZoomCharacter("James", color="#87CEEB", image="james_portrait")
+define daniel = ZoomCharacter("Daniel", color="#FF5733", image="daniel_portrait")
+define wendy = ZoomCharacter("Wendy", color="#FFB6C1", image="wendy_portrait")
+define phoebe = ZoomCharacter("Phoebe", color="#9370DB", image="phoebe_portrait")
 
 # Define Character Images
 image daniel_portrait = "images/portraits/doctor-portrait.png"
@@ -17,6 +36,9 @@ image phoebe_portrait = "images/portraits/ps_portrait.png"
 # Backgrounds
 image bg mansion = "images/bg/mansion_bg.png"
 image bg black = "images/bg/black_bg.png"
+image bg bedroom = "images/bg/bedroom-bg.png"
+image bg bathroom = "images/bg/bathroom-bg.png"
+image bg dining = "images/bg/dining-bg.png"
 
 
 # Custom Menu
@@ -37,6 +59,13 @@ default talked_to_wendy_before_death = False
 default talked_to_james_before_death = False
 default talked_to_phoebe_before_death = False
 
+default lights_out = False
+default hide_char_dark = False
+
+default dining_hall_first_entry = True
+
+default phoebe_death = False
+
 # EFFECTS CONFIG
 transform blur_effect:
     blur 2 
@@ -45,19 +74,28 @@ transform chem_position:
     xalign 0.5  
     yalign 0.3
 
-transform character_center:
-    xalign 0.5  
-    yalign 1.0 
+transform character_far_left:
+    xalign 0.0
+    yalign 1.0
 
 transform character_left:
-    xalign 0.1  # Moves character to the left
+    xalign 0.2
+    yalign 1.0
+
+transform character_center:
+    xalign 0.5
     yalign 1.0
 
 transform character_right:
-    xalign 0.9  # Moves character to the right
+    xalign 0.8
     yalign 1.0
 
-# START OF THE GAME
+transform character_far_right:
+    xalign 1.0
+    yalign 1.0
+
+# START OF THE GAME LABEL
+
 label start:
 
     stop music fadeout 3.0
@@ -82,47 +120,160 @@ label start:
     jump daniel_greeting
 
 
-screen image_map():
+# IMAGE MAPS FOR DIFFERENT SCENES
+
+# Main hall scene
+screen main_hall():
+    frame:
+        background Solid("#000000")  # Dark background
+        xfill True
+        yfill True
+
+    if lights_out:
+        add "images/bg/floor-one-main-dark.png" fit "contain" xalign 0.5
+
+        imagebutton:
+            idle "images/ui/arrow.png"
+            hover "images/ui/arrow-hover.png"
+            action [Hide("main_hall"), Show("dining_hall", transition=fade)]
+            xpos 1100
+            ypos 550
+            at Transform(zoom=0.25)
+
+        imagebutton:
+            idle "images/ui/arrow.png"
+            hover "images/ui/arrow-hover.png"
+            action [Hide("main_hall"), Show("bedroom_dark", transition=fade)]
+            xpos 460
+            ypos 150
+            at Transform(zoom=0.25, rotate=-90)
+
+    else:
+        add "images/bg/floor-one-main.png" fit "contain" xalign 0.5
+
+        # Image Buttons (Characters) during normal lighting
+        imagebutton:
+            idle "images/walks/doctor-walk/doctor-stand.png"
+            hover "images/walks/doctor-walk/doctor-stand-hover.png"
+            # action [Hide("main_hall"), Jump("daniel_greeting")]
+            xpos 680
+            ypos 750
+            at Transform(zoom=0.3, rotate=-0.3)
+
+        imagebutton:
+            idle "images/walks/journalist-walk/james-stand.png"
+            hover "images/walks/journalist-walk/james-stand-hover.png"
+            action [Hide("main_hall"), Jump("james_greeting")]
+            xpos 460
+            ypos 250
+            at Transform(zoom=0.3, rotate=.3)
+
+        imagebutton:
+            idle "images/walks/phoebe-walk/phoebe-stand.png"
+            hover "images/walks/phoebe-walk/phoebe-stand-hover.png"
+            action [Hide("main_hall"), Jump("phoebe_greeting")]
+            xpos 1100
+            ypos 150
+            at Transform(zoom=0.3, rotate=-.4)
+
+        # Arrow Button (Return to dining hall screen with fade)
+        imagebutton:
+            idle "images/ui/arrow.png"
+            hover "images/ui/arrow-hover.png"
+            action [Hide("main_hall"), Show("dining_hall", transition=fade)]
+            xpos 1100
+            ypos 550
+            at Transform(zoom=0.25)
+
+screen dining_hall():
     frame:
         background Solid("#000000")  # Keep it dark
         xfill True
         yfill True
 
-    add "images/bg/floor-one-main.png" fit "contain" xalign 0.5 at blur_effect
+    add "images/bg/floor-one-dining-dark.png" fit "contain" xalign 0.5 at blur_effect
 
-    # Image Buttons (Characters)
-    imagebutton:
-        idle "images/walks/doctor-walk/doctor-stand.png"
-        hover "images/walks/doctor-walk/doctor-stand-hover.png"
-        # action [Hide("image_map"), Jump("daniel_greeting")]
-        xpos 680
-        ypos 750
-        at Transform(zoom=0.3, rotate=-0.3)
+    if dining_hall_first_entry:
+        timer 0.1 action [Hide("dining_hall"), Jump("dining_room_cutscene")]
 
     imagebutton:
-        idle "images/walks/journalist-walk/james-stand.png"
-        hover "images/walks/journalist-walk/james-stand-hover.png"
-        action [Hide("image_map"), Jump("james_greeting")]
-        xpos 460
-        ypos 250
-        at Transform(zoom=0.3, rotate=.3)
+        idle "images/ui/arrow.png"
+        hover "images/ui/arrow-hover.png"
+        action [Hide("dining_hall"), Show("main_hall", transition=fade)]
+        xpos 250
+        ypos 400
+        at Transform(zoom=0.25, rotate=180)
 
-    imagebutton:
-        idle "images/walks/phoebe-walk/phoebe-stand.png"
-        hover "images/walks/phoebe-walk/phoebe-stand-hover.png"
-        action [Hide("image_map"), Jump("phoebe_greeting")]
-        xpos 1100
-        ypos 150
-        at Transform(zoom=0.3, rotate=-.4)
+    if not phoebe_death:
+        # Phoebe (Dining Hall)
+        imagebutton:
+            idle "images/walks/phoebe-walk/phoebe-stand-dark.png"
+            hover "images/walks/phoebe-walk/phoebe-stand-hover-dark.png"
+            action [Hide("dining_hall"), Jump("phoebe_dining_scene")]
+            xpos 300
+            ypos 150
+            at Transform(zoom=0.42, rotate=-.4)
 
-    # Arrow Button (Return to the image_map screen with fade)
+screen bedroom_dark():
+    frame:
+        background Solid("#000000") 
+        xfill True
+        yfill True
+
+    add "images/bg/bedroom-dark.png" fit "contain" xalign 0.5
+
+    # Wendy (bedroom)
     imagebutton:
-        idle "images/ui/arrow-right.png"
-        hover "images/ui/arrow-right-hover.png"
-        action [Hide("image_map"), Show("image_map", transition=fade)]
-        xpos 1100
-        ypos 550
-        at Transform(zoom=0.25)
+        idle "images/walks/wife-doctor-walk/doctor-wife-stand-dark.png"
+        hover "images/walks/wife-doctor-walk/doctor-wife-stand-hover-dark.png"
+        action [Hide("bedroom_dark"), Jump("wendy_bedroom_scene")]
+        xpos 1125
+        ypos 175
+        at Transform(zoom=0.55, rotate=0.2)
+
+    # Go to main hall 
+    imagebutton:
+        idle "images/ui/arrow.png"
+        hover "images/ui/arrow-hover.png"
+        action [Hide("bedroom_dark"), Show("main_hall", transition=fade)]
+        xpos 1175
+        ypos 700
+        at Transform(zoom=0.4, rotate=90)
+
+    # Go to bathroom
+    imagebutton:
+        idle "images/ui/arrow.png"
+        hover "images/ui/arrow-hover.png"
+        action [Hide("bedroom_dark"), Show("bathroom_dark", transition=fade)]
+        xpos 830
+        ypos 0
+        at Transform(zoom=0.4, rotate=-90)
+
+screen bathroom_dark():
+    frame:
+        background Solid("#000000")
+        xfill True
+        yfill True
+    
+    add "images/bg/bathroom-dark.png" fit "contain" xalign 0.5
+
+    # Back to bedroom
+    imagebutton:
+        idle "images/ui/arrow.png"
+        hover "images/ui/arrow-hover.png"
+        action [Hide("bathroom_dark"), Show("bedroom_dark", transition=fade)]
+        xpos 700
+        ypos 650
+        at Transform(zoom=0.45, rotate=90)
+
+    # Phoebe (bathroom)
+    imagebutton:
+        idle "images/deaths/phoebe-death-dark.png"
+        hover "images/deaths/phoebe-death-dark-hover.png"
+        action [Hide("bathroom_dark"), Jump("phoebe_death")]
+        xpos 200
+        ypos 100
+        at Transform(zoom=0.65, rotate=0.2)
 
 # BEFORE THE FIRST DEATH DIALOGUE AROUND THE MAP
 
@@ -195,7 +346,7 @@ label ask_work_before_death:
 
     hide wendy_portrait
     hide daniel_portrait
-    call screen image_map
+    call screen main_hall
 
 label tell_work_before_death:
 
@@ -216,7 +367,7 @@ label tell_work_before_death:
     wendy "In spite of my fears, I always do my best to save everyone!"
 
     hide wendy_portrait
-    call screen image_map
+    call screen main_hall
 
 
 
@@ -266,7 +417,7 @@ label james_greeting:
 
     hide james_portrait with fade
 
-    call screen image_map
+    call screen main_hall
 
 
 ## PHOEBE GREETING
@@ -341,7 +492,7 @@ label phoebe_chemistry:
     phoebe "If you’ll excuse me."
 
     hide phoebe_portrait
-    call screen image_map
+    call screen main_hall
 
 label phoebe_bad_chemistry:
 
@@ -363,7 +514,7 @@ label phoebe_bad_chemistry:
     phoebe "You must let me know your thoughts when you finish reading!"
 
     hide phoebe_portrait
-    call screen image_map
+    call screen main_hall
 
 label phoebe_hi:
 
@@ -373,60 +524,171 @@ label phoebe_hi:
     "She looks absorbed in her thoughts, staring at her notes."
 
     hide phoebe_portrait
-    call screen image_map
+    call screen main_hall
 
 
-# label dining_room_cutscene:
+label dining_room_cutscene:
 
-#     scene bg dining_room with fade
+    if not dining_hall_first_entry:
+        call screen dining_hall
+        return
 
-#     show wendy_portrait at character_center with dissolve
+    $ dining_hall_first_entry = False
+    $ lights_out = True
 
-#     wendy "Everyone, dinner is ready! Let’s gather around the table."
+    scene bg dining 
 
-#     hide wendy_portrait
-#     show daniel_portrait at character_left with dissolve
-#     show james_portrait at character_right with dissolve
+    show wendy_portrait at character_center with dissolve
+    wendy "Everyone, dinner is ready! Let’s gather around the table."
 
-#     daniel "Took you long enough! I am starving!"
+    hide wendy_portrait
+    show daniel_portrait at character_left with dissolve
+    show james_portrait at character_right with dissolve
 
-#     james "Ohhh! All the dishes look so good! I can’t wait to dig in."
+    daniel "Took you long enough! I am starving!"
+    james "Ohhh! All the dishes look so good! I can’t wait to dig in."
 
-#     hide daniel_portrait
-#     hide james_portrait
-#     return
+    hide daniel_portrait
+    hide james_portrait
+    show phoebe_portrait at character_center with dissolve
 
-# label mansion_exploration:
+    phoebe "Ah yes! 375 degrees, the perfect temperature for baked chicken."
+    phoebe "The golden brown color of the skin comes from the Maillard reaction between amino acids and reduced sugar."
+    phoebe "The proteins, including collagen and myosin, break down to create its new texture."
+    phoebe "The fat melts to keep the meat moist and lock in flavors. Truly marvelous!"
 
-#     scene bg dark_mansion with fade
+    hide phoebe_portrait
+    show james_portrait at character_center with dissolve
+    james "Come on, Phoebe! Stop reminding me of these terminologies I had to learn in class!"
+    james "The nightmares are coming back to me!"
 
-#     "You can freely explore the mansion with limited sight using your flashlight."
+    hide james_portrait
+    show daniel_portrait at character_center with dissolve
+    daniel "I can see she's still a walking textbook!"
+    daniel "Surely her intellect makes dinner conversations much more amusing than simple small talk."
 
-#     menu:
-#         "Go to the dining room":
-#             jump dining_room_explore
-#         "Go to the bedroom":
-#             jump bedroom_explore
-#         "Go to the bathroom":
-#             jump bathroom_explore
-#         "End exploration":
-#             jump advance_story
+    hide daniel_portrait
+    show wendy_portrait at character_center with dissolve
+    wendy "No matter what, having this long-awaited reunion is something to cherish!"
+    wendy "I especially want to hear more from [char_name]."
+    wendy "We haven't seen you in nearly a decade!"
 
-# label dining_room_explore:
+    hide wendy_portrait
 
-#     scene bg dining_room_dark with fade
+    scene bg black with Fade(0.5, 0.5, 0.5)
+    # play sound "audio/sfx/snowstorm.mp3" fadein 2.0 loop
 
-#     show phoebe_portrait at character_center with dissolve
+    $ hide_char_dark = True
 
-#     phoebe "Don’t mind me. I am just doing my work here, and I really need to concentrate."
+    james "A sudden blackout? I thought you took pride in this place, Daniel."
 
-#     phoebe "If you feel bored, maybe you can go around and check on the others?"
+    daniel "Oh, shut it! Heavy snow may have destroyed nearby power lines."
+    daniel "It has nothing to do with my house!"
 
-#     hide phoebe_portrait
-#     jump mansion_exploration
+    wendy "I'll go find candles to light up the room!"
 
-label advance_story:
+    phoebe "Can't we just use our phones for light?"
+    phoebe "Oh no! Looks like there's no signal."
 
-    "Having talked to everyone, you feel a strange sense of unease..."
+    wendy "Just our phone lights won't be enough."
+    wendy "I'll find candles to properly illuminate the room. Don't worry, I'll be right back."
 
-    return
+    james "Hehe, it just so happens I need to use the bathroom."
+    james "Could someone guide me?"
+
+    daniel "Alright, James, come with me to the bathroom while Wendy finds candles."
+
+    "(James and Daniel leave off screen)"
+
+    phoebe "I'll just wait here and resume my research until you all return."
+
+    $ hide_char_dark = False
+
+    stop sound fadeout 2.0
+
+    call screen dining_hall
+
+# LIGHTS ARE NOW OFF
+
+label phoebe_dining_scene:
+
+    scene bg dining
+    show phoebe_portrait at character_center with dissolve
+
+    phoebe "Don’t mind me. I am just doing my work here, and I really need to concentrate."
+    
+    phoebe "If you feel bored, maybe you can go around and check on the others?"
+
+    hide phoebe_portrait
+
+    call screen dining_hall
+
+label wendy_bedroom_scene:
+
+    scene bg bedroom
+    show wendy_portrait at character_center with dissolve
+
+    wendy "I could have sworn I put some candles around here. The lighter too… Where could it be?"
+    
+    wendy "It’s so difficult trying to find these things in total darkness!"
+
+    wendy "Oh, [char_name]! Did you come here looking for Daniel or James? They both went into the bathroom. You can check on them if you want."
+    
+    wendy "It must be difficult trying to use the bathroom in this total darkness."
+
+    hide wendy_portrait
+    call screen bedroom_dark
+
+# PHOEBE DEATH
+label phoebe_death:
+
+    scene bg bathroom
+
+    show james_portrait at character_far_left with dissolve
+    show daniel_portrait at character_far_right with dissolve
+    show wendy_portrait at character_center with dissolve
+
+    $ phoebe_death = True
+
+    james "What happened?"
+
+    daniel "No pulse. No breathing."
+    daniel "Phoebe... She is... dead..."
+
+    wendy "How could this be?"
+
+    james "We need to contact the police straight away!"
+    james "Ah! But there is no signal due to the storm."
+    james "It just had to be at a time like this!"
+
+    daniel "There's no visible wound."
+    daniel "It could only be poison."
+    daniel "Look at the kit she carried with her right over there."
+    daniel "One of the vials is spilled all over the table."
+
+    wendy "I can’t wrap my head around this."
+    wendy "Did she accidentally kill herself with poison?"
+    wendy "But why would she bring something like that?"
+
+    daniel "It’s Phoebe we're talking about."
+    daniel "We know her hobbies are gardening and botany."
+    daniel "She would extract different substances from plants."
+    daniel "It's hard to say if she went beyond and messed with poisonous plants."
+
+    james "I find it unlikely."
+    james "Someone brilliant like her wouldn't be so careless."
+    james "For all we know, this could be murder disguised as an accident!"
+
+    daniel "You can't be serious."
+    daniel "Are you accusing one of us of murder?"
+
+    james "I'm only speaking of possibilities here."
+    james "At this point, there’s nothing we can say without further examination."
+    james "I believe it’s best to leave this to our forensic expert, [char_name]."
+
+    hide james_portrait
+    hide daniel_portrait
+    hide wendy_portrait
+
+    call screen main_hall 
+
