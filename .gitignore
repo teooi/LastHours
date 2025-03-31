@@ -21,5 +21,6 @@ _wfCache
 log.txt 
 errors.txt 
 traceback.txt
+progressive_download.txt
 
 .vscode
