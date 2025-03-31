@@ -83,10 +83,6 @@ default gather_clue_screen = None
 transform blur_effect:
     blur 2 
 
-transform chem_position:
-    xalign 0.5  
-    yalign 0.3
-
 transform character_far_left:
     xalign 0.0
     yalign 1.0
@@ -553,6 +549,8 @@ label phoebe_greeting:
 
 label phoebe_leave:
 
+    image bag_of_chemicals = "images/items/plant-extracts.png"
+
     show phoebe normal at character_center with dissolve
 
     phoebe "That smell… I recognize it."
@@ -564,7 +562,7 @@ label phoebe_leave:
     show phoebe blur at character_center
 
     # Show the vial in focus
-    show bag_of_chemicals at chem_position with fade
+    show bag_of_chemicals at truecenter with fade
     pause 1.5
 
     # Hide both the vial and the blurred Phoebe, then restore normal Phoebe
