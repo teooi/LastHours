@@ -17,5 +17,3 @@ This project is a continuation of the **Fall 2024 TritonWare GameJam**, organize
 - **GitHub Issues**: Report bugs or suggest features.
 - **Email**: vgdc@ucsd.edu
 
-## License
-This project is open-source under the **MIT License**.
