@@ -12,10 +12,9 @@ This project is a continuation of the **Fall 2024 TritonWare GameJam**, organize
 - Jolina (artist)
 - William (story and game designer)
 
+Special thanks to Annie and Uzair - Programmers from the original GameJam team. 
+
 ## Contact
 - **VGDC UCSD Discord**: [Join Here](https://discord.gg/P2NY4y4WsA)
 - **GitHub Issues**: Report bugs or suggest features.
 - **Email**: vgdc@ucsd.edu
-
-## License
-This project is open-source under the **MIT License**.
